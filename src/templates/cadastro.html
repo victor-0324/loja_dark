@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar conta — VendeMais</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public.css') }}">
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-card" style="max-width: 460px;">
+            <div class="brand"><span class="logo-dot"></span> VendeMais</div>
+            <h2>Crie sua loja</h2>
+            <p class="subtitle">Comece a gerenciar sua loja de roupas em minutos</p>
+
+            <div class="auth-error" id="cadastro-error"></div>
+
+            <form class="auth-form" id="cadastro-form">
+                <label class="form-label">Nome da loja</label>
+                <input type="text" class="form-control" id="nome_loja" required>
+
+                <label class="form-label">Seu nome</label>
+                <input type="text" class="form-control" id="nome" required>
+
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required autocomplete="email">
+
+                <label class="form-label">Telefone</label>
+                <input type="tel" class="form-control" id="telefone" placeholder="(00) 00000-0000">
+
+                <label class="form-label">Senha</label>
+                <input type="password" class="form-control" id="senha" required minlength="6" autocomplete="new-password">
+                <div style="font-size:12px; color: var(--cor-texto-secundario); margin-top:4px;">Mínimo de 6 caracteres</div>
+
+                <button type="submit" class="btn btn-primary" id="btn-cadastro">Criar conta</button>
+            </form>
+
+            <div class="auth-footer-link">
+                Já tem uma conta? <a href="{{ url_for('auth.login_page') }}">Entrar</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        document.getElementById('cadastro-form').addEventListener('submit', async (evento) => {
+            evento.preventDefault();
+
+            const botao = document.getElementById('btn-cadastro');
+            const erroBox = document.getElementById('cadastro-error');
+            erroBox.classList.remove('show');
+            botao.disabled = true;
+            botao.textContent = 'Criando...';
+
+            try {
+                const resposta = await fetch('/auth/registrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        nome_loja: document.getElementById('nome_loja').value.trim(),
+                        nome: document.getElementById('nome').value.trim(),
+                        email: document.getElementById('email').value.trim(),
+                        telefone: document.getElementById('telefone').value.trim(),
+                        senha: document.getElementById('senha').value
+                    })
+                });
+
+                const dados = await resposta.json();
+
+                if (!resposta.ok) {
+                    throw new Error(dados.erro || 'Não foi possível criar a conta');
+                }
+
+                setToken(dados.token);
+                window.location.href = '/dashboard';
+
+            } catch (erro) {
+                erroBox.textContent = erro.message;
+                erroBox.classList.add('show');
+                botao.disabled = false;
+                botao.textContent = 'Criar conta';
+            }
+        });
+    </script>
+</body>
+</html>

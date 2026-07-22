@@ -1,0 +1,1044 @@
+{% extends "base_app.html" %}
+
+{% block title %}Detalhes do Cliente — VendeMais{% endblock %}
+{% block page_title %}Detalhes do Cliente{% endblock %}
+
+{% block content %}
+<div id="cliente-loading" class="loader"></div>
+
+<div id="cliente-container" style="display: none;">
+    <!-- Cabeçalho do Cliente -->
+    <div class="card cliente-header">
+        <div class="cliente-header-content">
+            <div class="cliente-avatar">
+                <div class="avatar-icon">👤</div>
+            </div>
+            <div class="cliente-info">
+                <h1 id="cliente-nome">—</h1>
+                <p id="cliente-status-badge" class="status-badge"></p>
+                <p id="cliente-email" class="secondary-text">—</p>
+                <p id="cliente-telefone" class="secondary-text">—</p>
+            </div>
+            <div class="cliente-actions">
+                <button class="btn btn-secondary" onclick="openEditModal()">✏️ Editar</button>
+                <button class="btn btn-secondary" onclick="openInteracaoModal()">💬 Nova Interação</button>
+                <button class="btn btn-warning" onclick="toggleClienteInativo()">⚠️ Inativar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicadores Principais -->
+    <div class="indicators-grid">
+        <div class="indicator-card">
+            <div class="indicator-value" id="ind-pedidos">0</div>
+            <div class="indicator-label">Pedidos</div>
+        </div>
+        <div class="indicator-card">
+            <div class="indicator-value" id="ind-gasto">R$ 0</div>
+            <div class="indicator-label">Total Gasto</div>
+        </div>
+        <div class="indicator-card">
+            <div class="indicator-value" id="ind-ticket">R$ 0</div>
+            <div class="indicator-label">Ticket Médio</div>
+        </div>
+        <div class="indicator-card">
+            <div class="indicator-value" id="ind-nivel">Bronze</div>
+            <div class="indicator-label">Nível Fidelidade</div>
+        </div>
+        <div class="indicator-card">
+            <div class="indicator-value" id="ind-pontos">0</div>
+            <div class="indicator-label">Pontos</div>
+        </div>
+        <div class="indicator-card">
+            <div class="indicator-value" id="ind-cupons">0</div>
+            <div class="indicator-label">Cupons</div>
+        </div>
+    </div>
+
+    <!-- Abas de Informação -->
+    <div class="tabs">
+        <button class="tab-button active" onclick="switchTab('dados')">📋 Dados Pessoais</button>
+        <button class="tab-button" onclick="switchTab('compras')">🛍️ Histórico de Compras</button>
+        <button class="tab-button" onclick="switchTab('interacoes')">💬 Interações</button>
+        <button class="tab-button" onclick="switchTab('preferencias')">❤️ Preferências</button>
+        <button class="tab-button" onclick="switchTab('timeline')">📅 Linha do Tempo</button>
+    </div>
+
+    <!-- Tab: Dados Pessoais -->
+    <div id="tab-dados" class="tab-content active card">
+        <h3>Informações Pessoais</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Email</label>
+                <p id="info-email">—</p>
+            </div>
+            <div class="info-item">
+                <label>Telefone</label>
+                <p id="info-telefone">—</p>
+            </div>
+            <div class="info-item">
+                <label>CPF/CNPJ</label>
+                <p id="info-cpf">—</p>
+            </div>
+            <div class="info-item">
+                <label>Data de Nascimento</label>
+                <p id="info-nascimento">—</p>
+            </div>
+            <div class="info-item">
+                <label>Gênero</label>
+                <p id="info-genero">—</p>
+            </div>
+            <div class="info-item">
+                <label>Origem</label>
+                <p id="info-origem">—</p>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px;">Endereço</h3>
+        <div class="info-grid">
+            <div class="info-item full-width">
+                <label>Endereço</label>
+                <p id="info-endereco">—</p>
+            </div>
+            <div class="info-item">
+                <label>Número</label>
+                <p id="info-numero">—</p>
+            </div>
+            <div class="info-item">
+                <label>Complemento</label>
+                <p id="info-complemento">—</p>
+            </div>
+            <div class="info-item">
+                <label>Cidade</label>
+                <p id="info-cidade">—</p>
+            </div>
+            <div class="info-item">
+                <label>Estado</label>
+                <p id="info-estado">—</p>
+            </div>
+            <div class="info-item">
+                <label>CEP</label>
+                <p id="info-cep">—</p>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px;">Preferências de Vestuário</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Tamanho de Roupa</label>
+                <p id="info-tam-roupa">—</p>
+            </div>
+            <div class="info-item">
+                <label>Tamanho de Calçado</label>
+                <p id="info-tam-calcado">—</p>
+            </div>
+            <div class="info-item full-width">
+                <label>Cores Preferidas</label>
+                <div id="info-cores" class="tag-list"></div>
+            </div>
+            <div class="info-item full-width">
+                <label>Estilos Preferidos</label>
+                <div id="info-estilos" class="tag-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tab: Histórico de Compras -->
+    <div id="tab-compras" class="tab-content card">
+        <h3>Pedidos</h3>
+        <div id="compras-lista" class="compras-list">
+            <p class="empty-state">Nenhum pedido encontrado</p>
+        </div>
+    </div>
+
+    <!-- Tab: Interações -->
+    <div id="tab-interacoes" class="tab-content card">
+        <h3>Histórico de Interações</h3>
+        <button class="btn btn-primary" onclick="openInteracaoModal()" style="margin-bottom: 20px;">
+            ➕ Adicionar Interação
+        </button>
+        <div id="interacoes-lista" class="interacoes-list">
+            <p class="empty-state">Nenhuma interação registrada</p>
+        </div>
+    </div>
+
+    <!-- Tab: Preferências -->
+    <div id="tab-preferencias" class="tab-content card">
+        <h3>Preferências de Comunicação</h3>
+        <div class="pref-grid">
+            <div class="pref-item">
+                <label>
+                    <input type="checkbox" id="pref-email" readonly> Email Marketing
+                </label>
+            </div>
+            <div class="pref-item">
+                <label>
+                    <input type="checkbox" id="pref-sms" readonly> SMS Marketing
+                </label>
+            </div>
+            <div class="pref-item">
+                <label>
+                    <input type="checkbox" id="pref-whatsapp" readonly> WhatsApp Marketing
+                </label>
+            </div>
+            <div class="pref-item">
+                <label>
+                    <input type="checkbox" id="pref-push" readonly> Notificações Push
+                </label>
+            </div>
+        </div>
+
+        <h3 style="margin-top: 30px;">Produtos Favoritos</h3>
+        <div id="favoritos-lista" class="produtos-favoritos">
+            <p class="empty-state">Nenhum produto favorito</p>
+        </div>
+    </div>
+
+    <!-- Tab: Linha do Tempo -->
+    <div id="tab-timeline" class="tab-content card">
+        <h3>Linha do Tempo</h3>
+        <div id="timeline-container" class="timeline">
+            <p class="empty-state">Nenhum evento registrado</p>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Edição -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeEditModal()">&times;</span>
+        <h2>Editar Cliente</h2>
+        <form id="editForm">
+            <div class="form-grid">
+                <input type="text" id="edit-nome" placeholder="Nome" required>
+                <input type="email" id="edit-email" placeholder="Email" required>
+                <input type="tel" id="edit-telefone" placeholder="Telefone">
+                <select id="edit-status">
+                    <option value="novo">Novo</option>
+                    <option value="ativo">Ativo</option>
+                    <option value="vip">VIP</option>
+                    <option value="inativo">Inativo</option>
+                </select>
+            </div>
+            <div class="form-grid">
+                <input type="text" id="edit-endereco" placeholder="Endereço">
+                <input type="text" id="edit-numero" placeholder="Número">
+                <input type="text" id="edit-complemento" placeholder="Complemento">
+                <input type="text" id="edit-cidade" placeholder="Cidade">
+            </div>
+            <textarea id="edit-observacoes" placeholder="Observações internas" style="width: 100%; min-height: 100px;"></textarea>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal de Interação -->
+<div id="interacaoModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeInteracaoModal()">&times;</span>
+        <h2>Registrar Interação</h2>
+        <form id="interacaoForm">
+            <select id="int-tipo" required>
+                <option value="">Selecione o tipo</option>
+                <option value="email">📧 Email</option>
+                <option value="telefone">☎️ Telefone</option>
+                <option value="chat">💬 Chat</option>
+                <option value="redes_sociais">📱 Redes Sociais</option>
+                <option value="presencialmente">👤 Presencialmente</option>
+            </select>
+            <input type="text" id="int-assunto" placeholder="Assunto" required>
+            <textarea id="int-descricao" placeholder="Descrição" style="width: 100%;"></textarea>
+            <select id="int-resultado">
+                <option value="bem_sucedida">✅ Bem Sucedida</option>
+                <option value="pendente">⏳ Pendente</option>
+                <option value="falha">❌ Falha</option>
+                <option value="agendada">📅 Agendada</option>
+            </select>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeInteracaoModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Registrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let clienteId = null;
+    let clienteData = null;
+
+    // Obter ID da URL
+    const urlParams = new URLSearchParams(window.location.search);
+    clienteId = parseInt(urlParams.get('id')) || null;
+
+    if (!clienteId) {
+        showAlert('Cliente não especificado', 'error');
+        window.location.href = '/clientes';
+    }
+
+    async function loadClienteDetalhes() {
+        try {
+            const response = await fetch(`${API_BASE}/clientes/${clienteId}`, { 
+                headers: authHeaders() 
+            });
+            
+            if (!response.ok) throw new Error('Erro ao carregar cliente');
+            
+            clienteData = await response.json();
+            
+            // Preencher dados
+            preencherDados();
+            preencherPedidos();
+            preencherInteracoes();
+            preencherPreferencias();
+            preencherTimeline();
+            
+            document.getElementById('cliente-loading').style.display = 'none';
+            document.getElementById('cliente-container').style.display = 'block';
+            
+        } catch (error) {
+            console.error('Erro:', error);
+            showAlert('Erro ao carregar dados do cliente', 'error');
+        }
+    }
+
+    function preencherDados() {
+        const c = clienteData.cliente;
+        const h = clienteData.historico;
+        
+        // Header
+        document.getElementById('cliente-nome').textContent = c.nome;
+        document.getElementById('cliente-email').textContent = c.email;
+        document.getElementById('cliente-telefone').textContent = c.telefone || '—';
+        
+        const statusBadge = document.getElementById('cliente-status-badge');
+        statusBadge.textContent = c.status.toUpperCase();
+        statusBadge.className = `status-badge status-${c.status}`;
+        
+        // Indicadores
+        document.getElementById('ind-pedidos').textContent = h.pedidos.length;
+        document.getElementById('ind-gasto').textContent = `R$ ${c.valor_total_gasto.toFixed(2)}`;
+        document.getElementById('ind-ticket').textContent = `R$ ${c.ticket_medio.toFixed(2)}`;
+        document.getElementById('ind-nivel').textContent = c.nivel_fidelidade;
+        document.getElementById('ind-pontos').textContent = c.pontos_fidelidade;
+        document.getElementById('ind-cupons').textContent = clienteData.indicadores.cupons_disponveis;
+        
+        // Informações pessoais
+        document.getElementById('info-email').textContent = c.email;
+        document.getElementById('info-telefone').textContent = c.telefone || '—';
+        document.getElementById('info-cpf').textContent = c.cpf_cnpj || '—';
+        document.getElementById('info-nascimento').textContent = c.data_nascimento 
+            ? new Date(c.data_nascimento).toLocaleDateString('pt-BR')
+            : '—';
+        document.getElementById('info-genero').textContent = c.genero || '—';
+        document.getElementById('info-origem').textContent = c.origem || '—';
+        
+        // Endereço
+        document.getElementById('info-endereco').textContent = c.endereco || '—';
+        document.getElementById('info-numero').textContent = c.numero || '—';
+        document.getElementById('info-complemento').textContent = c.complemento || '—';
+        document.getElementById('info-cidade').textContent = c.cidade || '—';
+        document.getElementById('info-estado').textContent = c.estado || '—';
+        document.getElementById('info-cep').textContent = c.cep || '—';
+        
+        // Vestuário
+        document.getElementById('info-tam-roupa').textContent = c.tamanho_roupa || '—';
+        document.getElementById('info-tam-calcado').textContent = c.tamanho_calcado || '—';
+        
+        // Tags
+        preencherTags('info-cores', c.cores_preferidas);
+        preencherTags('info-estilos', c.estilos_preferidos);
+        
+        // Editar modal
+        document.getElementById('edit-nome').value = c.nome;
+        document.getElementById('edit-email').value = c.email;
+        document.getElementById('edit-telefone').value = c.telefone || '';
+        document.getElementById('edit-status').value = c.status;
+        document.getElementById('edit-endereco').value = c.endereco || '';
+        document.getElementById('edit-numero').value = c.numero || '';
+        document.getElementById('edit-complemento').value = c.complemento || '';
+        document.getElementById('edit-cidade').value = c.cidade || '';
+    }
+
+    function preencherTags(elementId, tags) {
+        const container = document.getElementById(elementId);
+        container.innerHTML = '';
+        if (tags && tags.length > 0) {
+            tags.forEach(tag => {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'tag';
+                tagEl.textContent = tag;
+                container.appendChild(tagEl);
+            });
+        } else {
+            container.innerHTML = '<p class="empty-state">Nenhum item</p>';
+        }
+    }
+
+    function preencherPedidos() {
+        const lista = document.getElementById('compras-lista');
+        const pedidos = clienteData.historico.pedidos;
+        
+        if (pedidos.length === 0) {
+            lista.innerHTML = '<p class="empty-state">Nenhum pedido encontrado</p>';
+            return;
+        }
+        
+        lista.innerHTML = pedidos.map(p => `
+            <div class="pedido-card">
+                <div class="pedido-header">
+                    <strong>${p.numero_pedido}</strong>
+                    <span class="status-badge status-${p.status}">${p.status.toUpperCase()}</span>
+                </div>
+                <div class="pedido-info">
+                    <p><strong>R$ ${p.valor_total.toFixed(2)}</strong></p>
+                    <p>${new Date(p.data_pedido).toLocaleDateString('pt-BR')}</p>
+                </div>
+                <button class="btn btn-small btn-secondary" onclick="goToPedido(${p.id})">Ver Detalhes</button>
+            </div>
+        `).join('');
+    }
+
+    function preencherInteracoes() {
+        const lista = document.getElementById('interacoes-lista');
+        const interacoes = clienteData.historico.interacoes;
+        
+        if (interacoes.length === 0) {
+            lista.innerHTML = '<p class="empty-state">Nenhuma interação registrada</p>';
+            return;
+        }
+        
+        lista.innerHTML = interacoes.map(i => `
+            <div class="interacao-card">
+                <div class="interacao-tipo">${getTipoEmoji(i.tipo)} ${i.tipo}</div>
+                <div class="interacao-content">
+                    <strong>${i.assunto || 'Sem assunto'}</strong>
+                    <p>${i.descricao || ''}</p>
+                    <small>${new Date(i.data_interacao).toLocaleDateString('pt-BR')}</small>
+                </div>
+                <span class="status-badge status-${i.resultado}">${i.resultado}</span>
+            </div>
+        `).join('');
+    }
+
+    function preencherPreferencias() {
+        const prefs = clienteData.preferencias || {};
+        document.getElementById('pref-email').checked = prefs.email_marketing || false;
+        document.getElementById('pref-sms').checked = prefs.sms_marketing || false;
+        document.getElementById('pref-whatsapp').checked = prefs.whatsapp_marketing || false;
+        document.getElementById('pref-push').checked = prefs.notificacoes_push || false;
+        
+        const favs = clienteData.produtos_favoritos || [];
+        const favContainer = document.getElementById('favoritos-lista');
+        
+        if (favs.length === 0) {
+            favContainer.innerHTML = '<p class="empty-state">Nenhum produto favorito</p>';
+        } else {
+            favContainer.innerHTML = favs.map(p => `
+                <div class="produto-favorito">
+                    <div>${p.produto.nome}</div>
+                    <div>R$ ${p.produto.preco.toFixed(2)}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    function preencherTimeline() {
+        const timeline = document.getElementById('timeline-container');
+        const eventos = [];
+        
+        const c = clienteData.cliente;
+        if (c.data_criacao) eventos.push({
+            data: c.data_criacao,
+            tipo: 'Cliente cadastrado',
+            icone: '✨'
+        });
+        
+        if (clienteData.historico.pedidos.length > 0) {
+            clienteData.historico.pedidos.forEach(p => {
+                eventos.push({
+                    data: p.data_pedido,
+                    tipo: `Pedido ${p.numero_pedido}`,
+                    descricao: `Status: ${p.status} - R$ ${p.valor_total.toFixed(2)}`,
+                    icone: '🛍️'
+                });
+            });
+        }
+        
+        if (clienteData.historico.interacoes.length > 0) {
+            clienteData.historico.interacoes.slice(0, 5).forEach(i => {
+                eventos.push({
+                    data: i.data_interacao,
+                    tipo: `Interação: ${i.assunto}`,
+                    icone: getTipoEmoji(i.tipo)
+                });
+            });
+        }
+        
+        if (eventos.length === 0) {
+            timeline.innerHTML = '<p class="empty-state">Nenhum evento registrado</p>';
+            return;
+        }
+        
+        eventos.sort((a, b) => new Date(b.data) - new Date(a.data));
+        
+        timeline.innerHTML = eventos.map(e => `
+            <div class="timeline-item">
+                <div class="timeline-marker">${e.icone}</div>
+                <div class="timeline-content">
+                    <strong>${e.tipo}</strong>
+                    <p>${e.descricao || ''}</p>
+                    <small>${new Date(e.data).toLocaleDateString('pt-BR')} às ${new Date(e.data).toLocaleTimeString('pt-BR')}</small>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function switchTab(tabName) {
+        // Remover ativa
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+        
+        // Adicionar ativa
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+        event.target.classList.add('active');
+    }
+
+    function getTipoEmoji(tipo) {
+        const emojis = {
+            'email': '📧',
+            'telefone': '☎️',
+            'chat': '💬',
+            'redes_sociais': '📱',
+            'presencialmente': '👤'
+        };
+        return emojis[tipo] || '📝';
+    }
+
+    function openEditModal() {
+        document.getElementById('editModal').style.display = 'block';
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+    }
+
+    function openInteracaoModal() {
+        document.getElementById('interacaoModal').style.display = 'block';
+    }
+
+    function closeInteracaoModal() {
+        document.getElementById('interacaoModal').style.display = 'none';
+    }
+
+    async function salvarEdicao() {
+        const formData = {
+            nome: document.getElementById('edit-nome').value,
+            email: document.getElementById('edit-email').value,
+            telefone: document.getElementById('edit-telefone').value,
+            status: document.getElementById('edit-status').value,
+            endereco: document.getElementById('edit-endereco').value,
+            numero: document.getElementById('edit-numero').value,
+            complemento: document.getElementById('edit-complemento').value,
+            cidade: document.getElementById('edit-cidade').value,
+            observacoes_internas: document.getElementById('edit-observacoes').value,
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/clientes/${clienteId}`, {
+                method: 'PUT',
+                headers: {
+                    ...authHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) throw new Error('Erro ao salvar');
+            
+            showAlert('Cliente atualizado com sucesso', 'success');
+            closeEditModal();
+            loadClienteDetalhes();
+        } catch (error) {
+            showAlert('Erro ao atualizar cliente', 'error');
+        }
+    }
+
+    async function salvarInteracao() {
+        const formData = {
+            tipo: document.getElementById('int-tipo').value,
+            assunto: document.getElementById('int-assunto').value,
+            descricao: document.getElementById('int-descricao').value,
+            resultado: document.getElementById('int-resultado').value,
+        };
+
+        try {
+            const response = await fetch(`${API_BASE}/clientes/${clienteId}/interacoes`, {
+                method: 'POST',
+                headers: {
+                    ...authHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (!response.ok) throw new Error('Erro ao salvar');
+            
+            showAlert('Interação registrada com sucesso', 'success');
+            closeInteracaoModal();
+            loadClienteDetalhes();
+        } catch (error) {
+            showAlert('Erro ao registrar interação', 'error');
+        }
+    }
+
+    function goToPedido(pedidoId) {
+        window.location.href = `/pedidos?id=${pedidoId}`;
+    }
+
+    function toggleClienteInativo() {
+        if (confirm('Tem certeza que deseja inativar este cliente?')) {
+            fetch(`${API_BASE}/clientes/${clienteId}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            }).then(res => {
+                if (res.ok) {
+                    showAlert('Cliente inativado', 'success');
+                    window.location.href = '/clientes';
+                }
+            });
+        }
+    }
+
+    // Event listeners
+    document.getElementById('editForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        salvarEdicao();
+    });
+
+    document.getElementById('interacaoForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        salvarInteracao();
+    });
+
+    // Fechar modal ao clicar fora
+    window.onclick = function(event) {
+        const editModal = document.getElementById('editModal');
+        const intModal = document.getElementById('interacaoModal');
+        if (event.target === editModal) editModal.style.display = 'none';
+        if (event.target === intModal) intModal.style.display = 'none';
+    };
+
+    // Inicializar
+    requireAuth();
+    loadClienteDetalhes();
+</script>
+
+<style>
+    .cliente-header {
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        margin-bottom: 30px;
+    }
+
+    .cliente-header-content {
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        width: 100%;
+    }
+
+    .cliente-avatar {
+        flex-shrink: 0;
+    }
+
+    .avatar-icon {
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        background: linear-gradient(135deg, #FF1493, #0099FF);
+        border-radius: 50%;
+        color: white;
+    }
+
+    .cliente-info {
+        flex: 1;
+    }
+
+    .cliente-info h1 {
+        margin: 0;
+        font-size: 28px;
+    }
+
+    .cliente-info p {
+        margin: 5px 0;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+    }
+
+    .status-novo { background: #E3F2FD; color: #1976D2; }
+    .status-ativo { background: #E8F5E9; color: #388E3C; }
+    .status-vip { background: #FFF3E0; color: #F57C00; }
+    .status-inativo { background: #F3E5F5; color: #7B1FA2; }
+
+    .cliente-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .indicators-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .indicator-card {
+        background: linear-gradient(135deg, #f5f5f5, #e0e0e0);
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        border-left: 4px solid #FF1493;
+    }
+
+    .indicator-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #FF1493;
+        margin-bottom: 5px;
+    }
+
+    .indicator-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+    }
+
+    .tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #e0e0e0;
+        overflow-x: auto;
+    }
+
+    .tab-button {
+        padding: 10px 20px;
+        background: none;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        font-size: 14px;
+        color: #666;
+        transition: all 0.3s;
+        white-space: nowrap;
+    }
+
+    .tab-button:hover,
+    .tab-button.active {
+        color: #FF1493;
+        border-bottom-color: #FF1493;
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .info-item {
+        padding: 15px;
+        background: #f9f9f9;
+        border-radius: 5px;
+    }
+
+    .info-item.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .info-item label {
+        font-size: 12px;
+        color: #999;
+        text-transform: uppercase;
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .info-item p {
+        margin: 0;
+        color: #333;
+    }
+
+    .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .tag {
+        background: #FF1493;
+        color: white;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 12px;
+    }
+
+    .compras-list,
+    .interacoes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .pedido-card,
+    .interacao-card {
+        border: 1px solid #e0e0e0;
+        padding: 15px;
+        border-radius: 8px;
+        background: #fafafa;
+    }
+
+    .pedido-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .pedido-info {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .interacao-tipo {
+        font-size: 12px;
+        color: #999;
+        margin-bottom: 5px;
+    }
+
+    .interacao-content {
+        margin-bottom: 10px;
+    }
+
+    .interacao-content strong {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .interacao-content p {
+        margin: 0;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .interacao-content small {
+        color: #999;
+    }
+
+    .pref-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+
+    .pref-item label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+    }
+
+    .pref-item input {
+        cursor: pointer;
+    }
+
+    .produtos-favoritos {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+    }
+
+    .produto-favorito {
+        border: 1px solid #e0e0e0;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .timeline-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 39px;
+        top: 60px;
+        width: 2px;
+        height: 30px;
+        background: #ddd;
+    }
+
+    .timeline-marker {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        background: #f0f0f0;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .timeline-content {
+        flex: 1;
+        padding: 10px;
+        background: #f9f9f9;
+        border-radius: 5px;
+    }
+
+    .timeline-content strong {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .timeline-content p {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+        color: #666;
+    }
+
+    .timeline-content small {
+        color: #999;
+    }
+
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 5% auto;
+        padding: 30px;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 500px;
+    }
+
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    .close:hover {
+        color: #000;
+    }
+
+    .modal-content h2 {
+        margin-top: 0;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .form-grid input,
+    .form-grid select,
+    .modal-content textarea {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+    }
+
+    .form-grid select {
+        grid-column: 1 / -1;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .cliente-header-content {
+            flex-direction: column;
+        }
+
+        .cliente-actions {
+            width: 100%;
+        }
+
+        .indicators-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .tabs {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

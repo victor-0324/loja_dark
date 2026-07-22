@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}VendeMais{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <div class="app-shell">
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <span class="logo-dot"></span>
+                VendeMais
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('paginas.dashboard') }}" class="{{ 'active' if active == 'dashboard' else '' }}">
+                    <span class="icone">🏠</span> Dashboard
+                </a>
+                <a href="{{ url_for('paginas.clientes') }}" class="{{ 'active' if active == 'clientes' else '' }}">
+                    <span class="icone">👥</span> Clientes
+                </a>
+                <a href="{{ url_for('paginas.produtos') }}" class="{{ 'active' if active == 'produtos' else '' }}">
+                    <span class="icone">👕</span> Produtos
+                </a>
+                <a href="{{ url_for('paginas.pedidos') }}" class="{{ 'active' if active == 'pedidos' else '' }}">
+                    <span class="icone">🛍️</span> Pedidos
+                </a>
+                <a href="{{ url_for('paginas.relatorios') }}" class="{{ 'active' if active == 'relatorios' else '' }}">
+                    <span class="icone">📊</span> Relatórios
+                </a>
+                <a href="{{ url_for('paginas.configuracoes') }}" class="{{ 'active' if active == 'configuracoes' else '' }}">
+                    <span class="icone">⚙️</span> Configurações
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-user">
+                    <span class="avatar" id="sidebar-avatar">•</span>
+                    <span id="sidebar-user-nome">Carregando...</span>
+                </div>
+                <button class="btn-logout" onclick="logout()">Sair</button>
+            </div>
+        </aside>
+
+        <div class="main-content">
+            <header class="topbar">
+                <div style="display:flex; align-items:center; gap:14px;">
+                    <button class="topbar-toggle" onclick="toggleSidebar()">☰</button>
+                    <h2 style="margin:0; font-size:20px;">{% block page_title %}{% endblock %}</h2>
+                </div>
+                <div id="topbar-loja-nome" style="color: var(--cor-texto-secundario); font-size: 14px;"></div>
+            </header>
+
+            <main class="page-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Preenche nome do usuário/loja na sidebar a partir do token salvo localmente
+        (function preencherUsuarioSidebar() {
+            try {
+                const token = getToken();
+                if (!token) return;
+                const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+                const nome = payload.nome || 'Usuário';
+                document.getElementById('sidebar-user-nome').textContent = nome;
+                document.getElementById('sidebar-avatar').textContent = nome.charAt(0).toUpperCase();
+            } catch (e) {
+                document.getElementById('sidebar-user-nome').textContent = 'Minha Loja';
+            }
+        })();
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

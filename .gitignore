@@ -1,0 +1,71 @@
+# Ambiente virtual
+venv/
+env/
+ENV/
+.venv
+
+# Dependências
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Banco de dados
+*.db
+*.sqlite
+*.sqlite3
+vendemais.db
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# Uploads
+uploads/
+temp/
+tmp/
+
+# Logs
+logs/
+*.log
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Cache de projeto
+.cache/
+.coverage
+htmlcov/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Arquivos temporários
+*.tmp
+*.bak
+
+# Secrets
+secrets/
+.secrets/
+credentials.json
+
+# Builds
+dist/
+build/
+
+# Testes
+.tox/
+.hypothesis/

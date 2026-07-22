@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar — VendeMais</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public.css') }}">
+</head>
+<body>
+    <div class="auth-shell">
+        <div class="auth-card">
+            <div class="brand"><span class="logo-dot"></span> VendeMais</div>
+            <h2>Bem-vindo de volta</h2>
+            <p class="subtitle">Entre com sua conta para acessar o painel</p>
+
+            <div class="demo-hint">
+                Conta de demonstração: <strong>admin@minhaloja.com</strong> / <strong>admin123</strong>
+            </div>
+
+            <div class="auth-error" id="login-error"></div>
+
+            <form class="auth-form" id="login-form">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" required autocomplete="email">
+
+                <label class="form-label">Senha</label>
+                <input type="password" class="form-control" id="senha" required autocomplete="current-password">
+
+                <button type="submit" class="btn btn-primary" id="btn-login">Entrar</button>
+            </form>
+
+            <div class="auth-footer-link">
+                Ainda não tem uma loja cadastrada? <a href="{{ url_for('auth.registrar_page') }}">Criar conta grátis</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (evento) => {
+            evento.preventDefault();
+
+            const botao = document.getElementById('btn-login');
+            const erroBox = document.getElementById('login-error');
+            erroBox.classList.remove('show');
+            botao.disabled = true;
+            botao.textContent = 'Entrando...';
+
+            try {
+                const resposta = await fetch('/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: document.getElementById('email').value.trim(),
+                        senha: document.getElementById('senha').value
+                    })
+                });
+
+                const dados = await resposta.json();
+
+                if (!resposta.ok) {
+                    throw new Error(dados.erro || 'Não foi possível entrar');
+                }
+
+                // Guarda o token para as chamadas de API via fetch;
+                // o cookie de sessão (para navegação normal) já foi setado pelo servidor.
+                setToken(dados.token);
+                window.location.href = '/dashboard';
+
+            } catch (erro) {
+                erroBox.textContent = erro.message;
+                erroBox.classList.add('show');
+                botao.disabled = false;
+                botao.textContent = 'Entrar';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+{% extends "base_app.html" %}
+
+{% block title %}Clientes — VendeMais{% endblock %}
+{% block page_title %}Clientes{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div class="toolbar-filters">
+        <input type="text" id="filtro-pesquisa" class="form-control" placeholder="🔎 Buscar por nome, email, telefone..." style="min-width:260px;">
+        <select id="filtro-status" class="form-control">
+            <option value="">Todos os status</option>
+            <option value="novo">Novo</option>
+            <option value="ativo">Ativo</option>
+            <option value="vip">VIP</option>
+            <option value="inativo">Inativo</option>
+        </select>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalNovoCliente()">➕ Novo Cliente</button>
+</div>
+
+<div class="card">
+    <div id="clientes-loading" class="loader"></div>
+    <table class="tabela" id="tabela-clientes" style="display:none;">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Contato</th>
+                <th>Cidade</th>
+                <th>Status</th>
+                <th>Total gasto</th>
+                <th>Nível</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="clientes-corpo"></tbody>
+    </table>
+    <p class="empty-state" id="clientes-vazio" style="display:none;">Nenhum cliente encontrado</p>
+    <div class="paginacao" id="clientes-paginacao"></div>
+</div>
+
+<!-- Modal Novo Cliente -->
+<div class="modal" id="modal-cliente">
+    <div class="modal-content">
+        <span class="close" onclick="fecharModalNovoCliente()">&times;</span>
+        <h2>Novo Cliente</h2>
+        <form id="form-novo-cliente">
+            <div class="form-grid">
+                <input type="text" id="novo-nome" class="form-control" placeholder="Nome completo" required>
+                <input type="email" id="novo-email" class="form-control" placeholder="Email" required>
+                <input type="tel" id="novo-telefone" class="form-control" placeholder="Telefone">
+                <input type="text" id="novo-cpf" class="form-control" placeholder="CPF/CNPJ">
+                <input type="text" id="novo-cidade" class="form-control" placeholder="Cidade">
+                <select id="novo-estado" class="form-control">
+                    <option value="">UF</option>
+                    <option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option>
+                    <option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option>
+                    <option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option>
+                    <option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option>
+                    <option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option>
+                    <option>SE</option><option>TO</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalNovoCliente()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Salvar Cliente</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let paginaAtual = 1;
+
+    async function carregarClientes(pagina = 1) {
+        paginaAtual = pagina;
+        document.getElementById('clientes-loading').style.display = 'block';
+        document.getElementById('tabela-clientes').style.display = 'none';
+        document.getElementById('clientes-vazio').style.display = 'none';
+
+        const pesquisa = document.getElementById('filtro-pesquisa').value.trim();
+        const status = document.getElementById('filtro-status').value;
+
+        const params = new URLSearchParams({
+            pagina, por_pagina: 15, pesquisa, status
+        });
+
+        try {
+            const resposta = await apiFetch(`/clientes?${params.toString()}`);
+            const dados = await resposta.json();
+
+            document.getElementById('clientes-loading').style.display = 'none';
+
+            if (!dados.clientes || dados.clientes.length === 0) {
+                document.getElementById('clientes-vazio').style.display = 'block';
+                document.getElementById('clientes-paginacao').innerHTML = '';
+                return;
+            }
+
+            document.getElementById('tabela-clientes').style.display = 'table';
+            document.getElementById('clientes-corpo').innerHTML = dados.clientes.map(c => `
+                <tr>
+                    <td><strong>${c.nome}</strong></td>
+                    <td>${c.email}<br><span style="color:var(--cor-texto-secundario); font-size:12px;">${c.telefone || '—'}</span></td>
+                    <td>${c.cidade || '—'}${c.estado ? '/' + c.estado : ''}</td>
+                    <td><span class="status-badge status-${c.status}">${c.status}</span></td>
+                    <td>${formatarMoeda(c.valor_total_gasto)}</td>
+                    <td>${c.nivel_fidelidade}</td>
+                    <td><a href="/cliente/${c.id}" class="btn btn-small btn-secondary">Ver perfil</a></td>
+                </tr>
+            `).join('');
+
+            renderizarPaginacao(dados.paginacao);
+
+        } catch (erro) {
+            document.getElementById('clientes-loading').style.display = 'none';
+            showAlert('Erro ao carregar clientes', 'error');
+            console.error(erro);
+        }
+    }
+
+    function renderizarPaginacao(paginacao) {
+        const container = document.getElementById('clientes-paginacao');
+        if (paginacao.total_paginas <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+        let html = `<button ${paginacao.pagina <= 1 ? 'disabled' : ''} onclick="carregarClientes(${paginacao.pagina - 1})">‹</button>`;
+        for (let i = 1; i <= paginacao.total_paginas; i++) {
+            html += `<button class="${i === paginacao.pagina ? 'active' : ''}" onclick="carregarClientes(${i})">${i}</button>`;
+        }
+        html += `<button ${paginacao.pagina >= paginacao.total_paginas ? 'disabled' : ''} onclick="carregarClientes(${paginacao.pagina + 1})">›</button>`;
+        container.innerHTML = html;
+    }
+
+    function abrirModalNovoCliente() {
+        document.getElementById('modal-cliente').classList.add('open');
+    }
+
+    function fecharModalNovoCliente() {
+        document.getElementById('modal-cliente').classList.remove('open');
+        document.getElementById('form-novo-cliente').reset();
+    }
+
+    document.getElementById('form-novo-cliente').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+        try {
+            const resposta = await apiFetch('/clientes', {
+                method: 'POST',
+                body: JSON.stringify({
+                    nome: document.getElementById('novo-nome').value.trim(),
+                    email: document.getElementById('novo-email').value.trim(),
+                    telefone: document.getElementById('novo-telefone').value.trim(),
+                    cpf_cnpj: document.getElementById('novo-cpf').value.trim(),
+                    cidade: document.getElementById('novo-cidade').value.trim(),
+                    estado: document.getElementById('novo-estado').value,
+                })
+            });
+            const dados = await resposta.json();
+
+            if (!resposta.ok) throw new Error(dados.erro || 'Erro ao criar cliente');
+
+            showAlert('Cliente criado com sucesso', 'success');
+            fecharModalNovoCliente();
+            carregarClientes(1);
+
+        } catch (erro) {
+            showAlert(erro.message, 'error');
+        }
+    });
+
+    document.getElementById('filtro-pesquisa').addEventListener('input', debounce(() => carregarClientes(1), 450));
+    document.getElementById('filtro-status').addEventListener('change', () => carregarClientes(1));
+
+    carregarClientes();
+</script>
+{% endblock %}

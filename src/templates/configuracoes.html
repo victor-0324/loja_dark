@@ -1,0 +1,78 @@
+{% extends "base_app.html" %}
+
+{% block title %}Configurações — VendeMais{% endblock %}
+{% block page_title %}Configurações{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>Perfil do usuário</h3>
+    <div id="perfil-loading" class="loader"></div>
+    <div id="perfil-conteudo" style="display:none;">
+        <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+            <div>
+                <div class="form-label">Nome</div>
+                <p id="perfil-nome" style="font-size:15px; margin:0;">—</p>
+            </div>
+            <div>
+                <div class="form-label">Email</div>
+                <p id="perfil-email" style="font-size:15px; margin:0;">—</p>
+            </div>
+            <div>
+                <div class="form-label">Perfil</div>
+                <p id="perfil-cargo" style="font-size:15px; margin:0;">—</p>
+            </div>
+            <div>
+                <div class="form-label">Último acesso</div>
+                <p id="perfil-ultimo-acesso" style="font-size:15px; margin:0;">—</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Sobre o VendeMais</h3>
+    <p style="color: var(--cor-texto-secundario); font-size: 14px; max-width: 640px;">
+        Painel de gestão completo para lojas de roupas: CRM de clientes, catálogo de produtos,
+        controle de pedidos e relatórios de vendas em tempo real.
+    </p>
+    <p style="font-size: 13px; color: var(--cor-texto-secundario);">Versão 2.0.0</p>
+</div>
+
+<div class="card">
+    <h3>Sessão</h3>
+    <p style="color: var(--cor-texto-secundario); font-size: 14px; margin-bottom: 16px;">
+        Encerre sua sessão neste dispositivo com segurança.
+    </p>
+    <button class="btn btn-danger" onclick="logout()">Sair da conta</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function carregarPerfil() {
+        try {
+            const resposta = await fetch('/auth/me', { headers: authHeaders() });
+            if (resposta.status === 401) {
+                clearToken();
+                window.location.href = '/auth/login';
+                return;
+            }
+            const usuario = await resposta.json();
+
+            document.getElementById('perfil-loading').style.display = 'none';
+            document.getElementById('perfil-conteudo').style.display = 'block';
+
+            document.getElementById('perfil-nome').textContent = usuario.nome;
+            document.getElementById('perfil-email').textContent = usuario.email;
+            document.getElementById('perfil-cargo').textContent = usuario.eh_admin ? 'Administrador(a)' : (usuario.eh_gerente ? 'Gerente' : 'Colaborador(a)');
+            document.getElementById('perfil-ultimo-acesso').textContent = usuario.ultimo_acesso ? formatarDataHora(usuario.ultimo_acesso) : 'Primeiro acesso';
+
+        } catch (erro) {
+            document.getElementById('perfil-loading').style.display = 'none';
+            showAlert('Erro ao carregar perfil', 'error');
+        }
+    }
+
+    carregarPerfil();
+</script>
+{% endblock %}

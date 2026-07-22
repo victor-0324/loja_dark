@@ -1,0 +1,143 @@
+{% extends "base_app.html" %}
+
+{% block title %}Dashboard — VendeMais{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-label">Clientes</div>
+        <div class="stat-value">{{ total_clientes }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Produtos ativos</div>
+        <div class="stat-value">{{ total_produtos }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Pedidos</div>
+        <div class="stat-value">{{ total_pedidos }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label">Total em vendas</div>
+        <div class="stat-value">R$ {{ '%.2f'|format(valor_total_vendas or 0) }}</div>
+    </div>
+</div>
+
+<div class="card">
+    <h3>Vendas por período</h3>
+    <div id="vendas-resumo" class="indicators-grid">
+        <div class="indicator-card">
+            <div class="indicator-value" id="vendas-mes">—</div>
+            <div class="indicator-label">Este mês</div>
+        </div>
+        <div class="indicator-card">
+            <div class="indicator-value" id="vendas-30-dias">—</div>
+            <div class="indicator-label">Últimos 30 dias</div>
+        </div>
+        <div class="indicator-card">
+            <div class="indicator-value" id="vendas-ano">—</div>
+            <div class="indicator-label">Este ano</div>
+        </div>
+        <div class="indicator-card">
+            <div class="indicator-value" id="vendas-total">—</div>
+            <div class="indicator-label">Total geral</div>
+        </div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="card">
+        <h3>🏆 Produto mais vendido</h3>
+        <p id="produto-destaque" class="empty-state">Carregando...</p>
+    </div>
+    <div class="card">
+        <h3>💎 Cliente que mais gastou</h3>
+        <p id="cliente-destaque" class="empty-state">Carregando...</p>
+    </div>
+</div>
+
+<div class="card">
+    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px;">
+        <h3 style="margin:0;">Pedidos recentes</h3>
+        <a href="{{ url_for('paginas.pedidos') }}" class="btn btn-small btn-secondary">Ver todos</a>
+    </div>
+    <div id="pedidos-recentes-loading" class="loader"></div>
+    <table class="tabela" id="tabela-pedidos-recentes" style="display:none;">
+        <thead>
+            <tr>
+                <th>Pedido</th>
+                <th>Status</th>
+                <th>Valor</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody id="pedidos-recentes-corpo"></tbody>
+    </table>
+    <p class="empty-state" id="pedidos-recentes-vazio" style="display:none;">Nenhum pedido registrado ainda</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function carregarResumo() {
+        try {
+            const resposta = await apiFetch('/relatorios/resumo');
+            if (!resposta.ok) return;
+            const dados = await resposta.json();
+
+            document.getElementById('vendas-mes').textContent = formatarMoeda(dados.vendas.mes);
+            document.getElementById('vendas-30-dias').textContent = formatarMoeda(dados.vendas.ultimos_30_dias);
+            document.getElementById('vendas-ano').textContent = formatarMoeda(dados.vendas.ano);
+            document.getElementById('vendas-total').textContent = formatarMoeda(dados.vendas.total);
+
+            const produtoDestaque = document.getElementById('produto-destaque');
+            if (dados.produto_mais_vendido && dados.produto_mais_vendido.nome) {
+                produtoDestaque.className = '';
+                produtoDestaque.innerHTML = `<strong>${dados.produto_mais_vendido.nome}</strong><br><span style="color: var(--cor-texto-secundario); font-size:13px;">${dados.produto_mais_vendido.quantidade} unidades vendidas</span>`;
+            } else {
+                produtoDestaque.textContent = 'Ainda não há vendas suficientes';
+            }
+
+            const clienteDestaque = document.getElementById('cliente-destaque');
+            if (dados.cliente_maior_gasto && dados.cliente_maior_gasto.nome) {
+                clienteDestaque.className = '';
+                clienteDestaque.innerHTML = `<strong>${dados.cliente_maior_gasto.nome}</strong><br><span style="color: var(--cor-texto-secundario); font-size:13px;">${formatarMoeda(dados.cliente_maior_gasto.valor_total)} em compras</span>`;
+            } else {
+                clienteDestaque.textContent = 'Ainda não há dados suficientes';
+            }
+        } catch (erro) {
+            console.error('Erro ao carregar resumo:', erro);
+        }
+    }
+
+    async function carregarPedidosRecentes() {
+        try {
+            const resposta = await apiFetch('/pedidos?por_pagina=5&ordenar_por=data_pedido&ordem=desc');
+            const dados = await resposta.json();
+
+            document.getElementById('pedidos-recentes-loading').style.display = 'none';
+
+            if (!dados.pedidos || dados.pedidos.length === 0) {
+                document.getElementById('pedidos-recentes-vazio').style.display = 'block';
+                return;
+            }
+
+            document.getElementById('tabela-pedidos-recentes').style.display = 'table';
+            document.getElementById('pedidos-recentes-corpo').innerHTML = dados.pedidos.map(p => `
+                <tr>
+                    <td><strong>${p.numero_pedido}</strong></td>
+                    <td><span class="status-badge status-${p.status}">${p.status}</span></td>
+                    <td>${formatarMoeda(p.valor_total)}</td>
+                    <td>${formatarData(p.data_pedido)}</td>
+                </tr>
+            `).join('');
+        } catch (erro) {
+            document.getElementById('pedidos-recentes-loading').style.display = 'none';
+            console.error('Erro ao carregar pedidos recentes:', erro);
+        }
+    }
+
+    carregarResumo();
+    carregarPedidosRecentes();
+</script>
+{% endblock %}

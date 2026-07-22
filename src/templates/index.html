@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VendeMais — Gestão completa para sua loja de roupas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/public.css') }}">
+</head>
+<body>
+    <nav class="public-nav">
+        <div class="brand"><span class="logo-dot"></span> VendeMais</div>
+        <div class="nav-actions">
+            <a href="{{ url_for('auth.login_page') }}" class="btn btn-secondary">Entrar</a>
+            <a href="{{ url_for('auth.registrar_page') }}" class="btn btn-primary">Criar conta grátis</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-text">
+            <h1>Gerencie sua loja de roupas com <span class="destaque">inteligência</span></h1>
+            <p>CRM de clientes, controle de estoque, pedidos e relatórios de vendas em um só lugar — feito para lojas de moda que querem crescer.</p>
+            <div class="hero-actions">
+                <a href="{{ url_for('auth.registrar_page') }}" class="btn btn-primary">Começar agora</a>
+                <a href="{{ url_for('auth.login_page') }}" class="btn btn-secondary">Já tenho conta</a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="mock-card">
+                <div class="mock-header">
+                    <strong>Resumo de vendas</strong>
+                    <span class="dot" style="background: var(--cor-sucesso);"></span>
+                </div>
+                <div class="indicators-grid" style="grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                    <div class="indicator-card">
+                        <div class="indicator-value">R$ 42,8k</div>
+                        <div class="indicator-label">Vendas do mês</div>
+                    </div>
+                    <div class="indicator-card">
+                        <div class="indicator-value">318</div>
+                        <div class="indicator-label">Pedidos</div>
+                    </div>
+                    <div class="indicator-card">
+                        <div class="indicator-value">92</div>
+                        <div class="indicator-label">Clientes VIP</div>
+                    </div>
+                    <div class="indicator-card">
+                        <div class="indicator-value">4.8★</div>
+                        <div class="indicator-label">Satisfação</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="feature-card">
+            <div class="icone">👥</div>
+            <h3>CRM de Clientes</h3>
+            <p>Histórico de compras, preferências de estilo, tamanhos, fidelidade e interações — tudo em um perfil único.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icone">👕</div>
+            <h3>Catálogo &amp; Estoque</h3>
+            <p>Controle de tamanhos, cores, coleções e alertas automáticos de estoque baixo.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icone">🛍️</div>
+            <h3>Pedidos completos</h3>
+            <p>Do carrinho à entrega: pagamento, envio, devoluções e rastreio em um fluxo só.</p>
+        </div>
+        <div class="feature-card">
+            <div class="icone">📊</div>
+            <h3>Relatórios em tempo real</h3>
+            <p>Vendas por período, produtos mais vendidos e clientes que mais compram.</p>
+        </div>
+    </section>
+
+    <footer class="public-footer">
+        © 2026 VendeMais. Feito para lojas de moda que vendem mais.
+    </footer>
+</body>
+</html>

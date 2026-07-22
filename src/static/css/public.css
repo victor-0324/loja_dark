@@ -1,0 +1,227 @@
+/* Páginas públicas: landing, login, cadastro */
+
+.public-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 6vw;
+}
+
+.public-nav .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 20px;
+}
+
+.public-nav .brand .logo-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--cor-gradiente);
+}
+
+.public-nav .nav-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.hero {
+    display: flex;
+    align-items: center;
+    gap: 60px;
+    padding: 40px 6vw 90px;
+    flex-wrap: wrap;
+}
+
+.hero-text {
+    flex: 1;
+    min-width: 300px;
+}
+
+.hero-text h1 {
+    font-size: 44px;
+    line-height: 1.15;
+    margin-bottom: 18px;
+}
+
+.hero-text .destaque {
+    background: var(--cor-gradiente);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.hero-text p {
+    font-size: 17px;
+    color: var(--cor-texto-secundario);
+    margin-bottom: 28px;
+    max-width: 480px;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 14px;
+}
+
+.hero-visual {
+    flex: 1;
+    min-width: 280px;
+    display: flex;
+    justify-content: center;
+}
+
+.hero-visual .mock-card {
+    background: var(--cor-card);
+    border-radius: 20px;
+    box-shadow: var(--sombra-elevada);
+    padding: 26px;
+    width: 100%;
+    max-width: 380px;
+}
+
+.mock-card .mock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.mock-card .mock-header .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+.features {
+    padding: 20px 6vw 90px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 22px;
+}
+
+.feature-card {
+    background: var(--cor-card);
+    border-radius: var(--raio);
+    padding: 26px;
+    box-shadow: var(--sombra-card);
+}
+
+.feature-card .icone {
+    font-size: 28px;
+    margin-bottom: 12px;
+}
+
+.feature-card h3 {
+    font-size: 17px;
+}
+
+.feature-card p {
+    color: var(--cor-texto-secundario);
+    font-size: 14px;
+    margin: 0;
+}
+
+.public-footer {
+    text-align: center;
+    padding: 30px;
+    color: var(--cor-texto-secundario);
+    font-size: 13px;
+}
+
+/* Auth (login/cadastro) */
+.auth-shell {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+}
+
+.auth-card {
+    background: var(--cor-card);
+    border-radius: 20px;
+    box-shadow: var(--sombra-elevada);
+    padding: 44px;
+    width: 100%;
+    max-width: 420px;
+}
+
+.auth-card .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 20px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.auth-card .brand .logo-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--cor-gradiente);
+}
+
+.auth-card h2 {
+    text-align: center;
+    margin-top: 18px;
+}
+
+.auth-card .subtitle {
+    text-align: center;
+    color: var(--cor-texto-secundario);
+    font-size: 14px;
+    margin-bottom: 26px;
+}
+
+.auth-form .form-label {
+    margin-top: 14px;
+}
+
+.auth-form .btn-primary {
+    width: 100%;
+    justify-content: center;
+    padding: 13px;
+    margin-top: 22px;
+    font-size: 15px;
+}
+
+.auth-footer-link {
+    text-align: center;
+    margin-top: 22px;
+    font-size: 14px;
+    color: var(--cor-texto-secundario);
+}
+
+.auth-footer-link a {
+    color: var(--cor-primaria);
+    font-weight: 700;
+}
+
+.auth-error {
+    background: #FFE3E3;
+    color: #C0392B;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+}
+
+.auth-error.show {
+    display: block;
+}
+
+.demo-hint {
+    background: #F1E9FF;
+    color: #6A2FC9;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    margin-bottom: 18px;
+    text-align: center;
+}
+
+@media (max-width: 700px) {
+    .hero-text h1 { font-size: 32px; }
+    .hero { padding-bottom: 50px; }
+}

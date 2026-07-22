@@ -1,0 +1,326 @@
+{% extends "base_app.html" %}
+
+{% block title %}Pedidos — VendeMais{% endblock %}
+{% block page_title %}Pedidos{% endblock %}
+
+{% block content %}
+<div class="toolbar">
+    <div class="toolbar-filters">
+        <input type="text" id="filtro-pesquisa" class="form-control" placeholder="🔎 Buscar por número, email do cliente..." style="min-width:260px;">
+        <select id="filtro-status" class="form-control">
+            <option value="">Todos os status</option>
+            <option value="pendente">Pendente</option>
+            <option value="confirmado">Confirmado</option>
+            <option value="processando">Processando</option>
+            <option value="despachado">Despachado</option>
+            <option value="enviado">Enviado</option>
+            <option value="entregue">Entregue</option>
+            <option value="cancelado">Cancelado</option>
+            <option value="devolvido">Devolvido</option>
+        </select>
+    </div>
+    <button class="btn btn-primary" onclick="abrirModalNovoPedido()">➕ Novo Pedido</button>
+</div>
+
+<div class="card">
+    <div id="pedidos-loading" class="loader"></div>
+    <table class="tabela" id="tabela-pedidos" style="display:none;">
+        <thead>
+            <tr>
+                <th>Pedido</th>
+                <th>Cliente</th>
+                <th>Status</th>
+                <th>Valor</th>
+                <th>Data</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="pedidos-corpo"></tbody>
+    </table>
+    <p class="empty-state" id="pedidos-vazio" style="display:none;">Nenhum pedido encontrado</p>
+    <div class="paginacao" id="pedidos-paginacao"></div>
+</div>
+
+<!-- Modal Novo Pedido -->
+<div class="modal" id="modal-pedido">
+    <div class="modal-content" style="max-width: 620px;">
+        <span class="close" onclick="fecharModalNovoPedido()">&times;</span>
+        <h2>Novo Pedido</h2>
+        <form id="form-novo-pedido">
+            <label class="form-label">Cliente</label>
+            <select id="pedido-cliente" class="form-control" required style="margin-bottom:14px;"></select>
+
+            <label class="form-label">Itens do pedido</label>
+            <div id="itens-pedido-lista"></div>
+            <button type="button" class="btn btn-small btn-secondary" onclick="adicionarLinhaItem()" style="margin: 10px 0 16px;">➕ Adicionar item</button>
+
+            <div class="form-grid">
+                <select id="pedido-metodo-pagamento" class="form-control">
+                    <option value="">Método de pagamento</option>
+                    <option value="pix">Pix</option>
+                    <option value="credito">Cartão de Crédito</option>
+                    <option value="debito">Cartão de Débito</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="transferencia">Transferência</option>
+                    <option value="dinheiro">Dinheiro</option>
+                </select>
+                <input type="number" step="0.01" id="pedido-taxa-envio" class="form-control" placeholder="Taxa de envio (R$)">
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="fecharModalNovoPedido()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Criar Pedido</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Detalhes do Pedido -->
+<div class="modal" id="modal-detalhes-pedido">
+    <div class="modal-content" style="max-width: 600px;">
+        <span class="close" onclick="fecharModalDetalhes()">&times;</span>
+        <h2 id="detalhes-numero-pedido">Pedido</h2>
+        <div id="detalhes-pedido-conteudo"></div>
+        <div class="form-actions">
+            <label class="form-label" style="margin:0;">Alterar status:</label>
+            <select id="select-novo-status" class="form-control" style="max-width: 200px;">
+                <option value="pendente">Pendente</option>
+                <option value="confirmado">Confirmado</option>
+                <option value="processando">Processando</option>
+                <option value="despachado">Despachado</option>
+                <option value="enviado">Enviado</option>
+                <option value="entregue">Entregue</option>
+                <option value="cancelado">Cancelado</option>
+            </select>
+            <button class="btn btn-primary" onclick="salvarNovoStatus()">Atualizar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let clientesCache = [];
+    let produtosCache = [];
+    let pedidoDetalhesAtualId = null;
+
+    async function carregarClientesEProdutosCache() {
+        try {
+            const [respClientes, respProdutos] = await Promise.all([
+                apiFetch('/clientes?por_pagina=100'),
+                apiFetch('/produtos?por_pagina=100')
+            ]);
+            const dadosClientes = await respClientes.json();
+            const dadosProdutos = await respProdutos.json();
+            clientesCache = dadosClientes.clientes || [];
+            produtosCache = dadosProdutos.produtos || [];
+
+            const selectCliente = document.getElementById('pedido-cliente');
+            selectCliente.innerHTML = '<option value="">Selecione um cliente</option>' +
+                clientesCache.map(c => `<option value="${c.id}">${c.nome} — ${c.email}</option>`).join('');
+
+        } catch (erro) {
+            console.error('Erro ao carregar clientes/produtos:', erro);
+        }
+    }
+
+    function nomeClientePorId(id) {
+        const cliente = clientesCache.find(c => c.id === id);
+        return cliente ? cliente.nome : `Cliente #${id}`;
+    }
+
+    async function carregarPedidos(pagina = 1) {
+        document.getElementById('pedidos-loading').style.display = 'block';
+        document.getElementById('tabela-pedidos').style.display = 'none';
+        document.getElementById('pedidos-vazio').style.display = 'none';
+
+        const params = new URLSearchParams({
+            pagina, por_pagina: 15,
+            pesquisa: document.getElementById('filtro-pesquisa').value.trim(),
+            status: document.getElementById('filtro-status').value,
+        });
+
+        try {
+            const resposta = await apiFetch(`/pedidos?${params.toString()}`);
+            const dados = await resposta.json();
+
+            document.getElementById('pedidos-loading').style.display = 'none';
+
+            if (!dados.pedidos || dados.pedidos.length === 0) {
+                document.getElementById('pedidos-vazio').style.display = 'block';
+                document.getElementById('pedidos-paginacao').innerHTML = '';
+                return;
+            }
+
+            document.getElementById('tabela-pedidos').style.display = 'table';
+            document.getElementById('pedidos-corpo').innerHTML = dados.pedidos.map(p => `
+                <tr>
+                    <td><strong>${p.numero_pedido}</strong></td>
+                    <td>${nomeClientePorId(p.cliente_id)}</td>
+                    <td><span class="status-badge status-${p.status}">${p.status}</span></td>
+                    <td>${formatarMoeda(p.valor_total)}</td>
+                    <td>${formatarData(p.data_pedido)}</td>
+                    <td><button class="btn btn-small btn-secondary" onclick="abrirDetalhesPedido(${p.id})">Ver</button></td>
+                </tr>
+            `).join('');
+
+            renderizarPaginacao(dados.paginacao);
+
+        } catch (erro) {
+            document.getElementById('pedidos-loading').style.display = 'none';
+            showAlert('Erro ao carregar pedidos', 'error');
+            console.error(erro);
+        }
+    }
+
+    function renderizarPaginacao(paginacao) {
+        const container = document.getElementById('pedidos-paginacao');
+        if (paginacao.total_paginas <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+        let html = `<button ${paginacao.pagina <= 1 ? 'disabled' : ''} onclick="carregarPedidos(${paginacao.pagina - 1})">‹</button>`;
+        for (let i = 1; i <= paginacao.total_paginas; i++) {
+            html += `<button class="${i === paginacao.pagina ? 'active' : ''}" onclick="carregarPedidos(${i})">${i}</button>`;
+        }
+        html += `<button ${paginacao.pagina >= paginacao.total_paginas ? 'disabled' : ''} onclick="carregarPedidos(${paginacao.pagina + 1})">›</button>`;
+        container.innerHTML = html;
+    }
+
+    function abrirModalNovoPedido() {
+        document.getElementById('modal-pedido').classList.add('open');
+        if (document.getElementById('itens-pedido-lista').children.length === 0) {
+            adicionarLinhaItem();
+        }
+    }
+
+    function fecharModalNovoPedido() {
+        document.getElementById('modal-pedido').classList.remove('open');
+    }
+
+    function adicionarLinhaItem() {
+        const container = document.getElementById('itens-pedido-lista');
+        const linha = document.createElement('div');
+        linha.className = 'form-grid';
+        linha.style.gridTemplateColumns = '2fr 1fr auto';
+        linha.innerHTML = `
+            <select class="form-control item-produto">
+                <option value="">Selecione o produto</option>
+                ${produtosCache.map(p => `<option value="${p.id}" data-preco="${p.preco}">${p.nome} (${formatarMoeda(p.preco)})</option>`).join('')}
+            </select>
+            <input type="number" class="form-control item-quantidade" placeholder="Qtd" value="1" min="1">
+            <button type="button" class="btn btn-small btn-secondary" onclick="this.parentElement.remove()">✕</button>
+        `;
+        container.appendChild(linha);
+    }
+
+    document.getElementById('form-novo-pedido').addEventListener('submit', async (evento) => {
+        evento.preventDefault();
+
+        const clienteId = document.getElementById('pedido-cliente').value;
+        if (!clienteId) {
+            showAlert('Selecione um cliente', 'error');
+            return;
+        }
+
+        const itens = Array.from(document.querySelectorAll('#itens-pedido-lista > div')).map(linha => {
+            const produtoId = linha.querySelector('.item-produto').value;
+            const quantidade = parseInt(linha.querySelector('.item-quantidade').value || '1', 10);
+            return produtoId ? { produto_id: parseInt(produtoId, 10), quantidade } : null;
+        }).filter(Boolean);
+
+        if (itens.length === 0) {
+            showAlert('Adicione ao menos um item ao pedido', 'error');
+            return;
+        }
+
+        try {
+            const resposta = await apiFetch('/pedidos', {
+                method: 'POST',
+                body: JSON.stringify({
+                    cliente_id: parseInt(clienteId, 10),
+                    itens,
+                    metodo_pagamento: document.getElementById('pedido-metodo-pagamento').value || null,
+                    taxa_envio: parseFloat(document.getElementById('pedido-taxa-envio').value || 0),
+                })
+            });
+            const dados = await resposta.json();
+
+            if (!resposta.ok) throw new Error(dados.erro || 'Erro ao criar pedido');
+
+            showAlert('Pedido criado com sucesso', 'success');
+            fecharModalNovoPedido();
+            document.getElementById('itens-pedido-lista').innerHTML = '';
+            document.getElementById('form-novo-pedido').reset();
+            carregarPedidos(1);
+
+        } catch (erro) {
+            showAlert(erro.message, 'error');
+        }
+    });
+
+    async function abrirDetalhesPedido(pedidoId) {
+        pedidoDetalhesAtualId = pedidoId;
+        try {
+            const resposta = await apiFetch(`/pedidos/${pedidoId}`);
+            const pedido = await resposta.json();
+
+            document.getElementById('detalhes-numero-pedido').textContent = `Pedido ${pedido.numero_pedido}`;
+            document.getElementById('select-novo-status').value = pedido.status;
+
+            const itensHtml = (pedido.itens || []).map(i => `
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--cor-borda);">
+                    <span>${i.quantidade}x ${i.produto_nome} ${i.tamanho ? '(' + i.tamanho + ')' : ''}</span>
+                    <strong>${formatarMoeda(i.quantidade * i.preco_unitario)}</strong>
+                </div>
+            `).join('');
+
+            document.getElementById('detalhes-pedido-conteudo').innerHTML = `
+                <p><strong>Cliente:</strong> ${nomeClientePorId(pedido.cliente_id)}</p>
+                <p><strong>Data:</strong> ${formatarDataHora(pedido.data_pedido)}</p>
+                <p><strong>Método de pagamento:</strong> ${pedido.metodo_pagamento || '—'}</p>
+                <div style="margin: 14px 0;">${itensHtml || '<span class="empty-state">Sem itens</span>'}</div>
+                <p style="text-align:right; font-size: 18px;"><strong>Total: ${formatarMoeda(pedido.valor_total)}</strong></p>
+            `;
+
+            document.getElementById('modal-detalhes-pedido').classList.add('open');
+        } catch (erro) {
+            showAlert('Erro ao carregar pedido', 'error');
+        }
+    }
+
+    function fecharModalDetalhes() {
+        document.getElementById('modal-detalhes-pedido').classList.remove('open');
+    }
+
+    async function salvarNovoStatus() {
+        const novoStatus = document.getElementById('select-novo-status').value;
+        try {
+            const resposta = await apiFetch(`/pedidos/${pedidoDetalhesAtualId}/status`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status: novoStatus })
+            });
+            const dados = await resposta.json();
+            if (!resposta.ok) throw new Error(dados.erro || 'Erro ao atualizar status');
+
+            showAlert('Status atualizado', 'success');
+            fecharModalDetalhes();
+            carregarPedidos();
+        } catch (erro) {
+            showAlert(erro.message, 'error');
+        }
+    }
+
+    function goToPedido(id) {
+        abrirDetalhesPedido(id);
+    }
+
+    document.getElementById('filtro-pesquisa').addEventListener('input', debounce(() => carregarPedidos(1), 450));
+    document.getElementById('filtro-status').addEventListener('change', () => carregarPedidos(1));
+
+    (async function iniciar() {
+        await carregarClientesEProdutosCache();
+        carregarPedidos();
+    })();
+</script>
+{% endblock %}

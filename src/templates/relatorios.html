@@ -1,0 +1,167 @@
+{% extends "base_app.html" %}
+
+{% block title %}Relatórios — VendeMais{% endblock %}
+{% block page_title %}Relatórios{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h3>Resumo geral</h3>
+    <div class="indicators-grid" id="resumo-indicadores">
+        <div class="indicator-card"><div class="indicator-value">—</div><div class="indicator-label">Carregando...</div></div>
+    </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+    <div class="card">
+        <h3>🏆 Produtos mais vendidos</h3>
+        <div id="produtos-populares-loading" class="loader"></div>
+        <table class="tabela" id="tabela-produtos-populares" style="display:none;">
+            <thead><tr><th>Produto</th><th>Qtd.</th><th>Total</th></tr></thead>
+            <tbody id="produtos-populares-corpo"></tbody>
+        </table>
+        <p class="empty-state" id="produtos-populares-vazio" style="display:none;">Sem dados de vendas ainda</p>
+    </div>
+
+    <div class="card">
+        <h3>💎 Clientes VIP</h3>
+        <div id="clientes-vip-loading" class="loader"></div>
+        <table class="tabela" id="tabela-clientes-vip" style="display:none;">
+            <thead><tr><th>Cliente</th><th>Pedidos</th><th>Total</th></tr></thead>
+            <tbody id="clientes-vip-corpo"></tbody>
+        </table>
+        <p class="empty-state" id="clientes-vip-vazio" style="display:none;">Sem dados de clientes ainda</p>
+    </div>
+</div>
+
+<div class="card">
+    <h3>📦 Estoque</h3>
+    <div id="estoque-loading" class="loader"></div>
+    <div id="estoque-resumo" style="display:none;">
+        <div class="indicators-grid">
+            <div class="indicator-card">
+                <div class="indicator-value" id="estoque-total-produtos">0</div>
+                <div class="indicator-label">Produtos ativos</div>
+            </div>
+            <div class="indicator-card">
+                <div class="indicator-value" id="estoque-total-unidades">0</div>
+                <div class="indicator-label">Unidades em estoque</div>
+            </div>
+            <div class="indicator-card">
+                <div class="indicator-value" id="estoque-baixo-count">0</div>
+                <div class="indicator-label">Estoque baixo</div>
+            </div>
+            <div class="indicator-card">
+                <div class="indicator-value" id="estoque-zerado-count">0</div>
+                <div class="indicator-label">Sem estoque</div>
+            </div>
+        </div>
+        <div id="estoque-alertas"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function carregarResumoGeral() {
+        try {
+            const resposta = await apiFetch('/relatorios/resumo');
+            const dados = await resposta.json();
+            document.getElementById('resumo-indicadores').innerHTML = `
+                <div class="indicator-card">
+                    <div class="indicator-value">${dados.clientes.total}</div>
+                    <div class="indicator-label">Clientes</div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-value">${dados.pedidos.total}</div>
+                    <div class="indicator-label">Pedidos</div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-value">${formatarMoeda(dados.vendas.mes)}</div>
+                    <div class="indicator-label">Vendas do mês</div>
+                </div>
+                <div class="indicator-card">
+                    <div class="indicator-value">${formatarMoeda(dados.vendas.total)}</div>
+                    <div class="indicator-label">Vendas totais</div>
+                </div>
+            `;
+        } catch (erro) {
+            console.error(erro);
+        }
+    }
+
+    async function carregarProdutosPopulares() {
+        try {
+            const resposta = await apiFetch('/relatorios/produtos-populares?limite=8');
+            const dados = await resposta.json();
+            document.getElementById('produtos-populares-loading').style.display = 'none';
+
+            if (!dados.produtos || dados.produtos.length === 0) {
+                document.getElementById('produtos-populares-vazio').style.display = 'block';
+                return;
+            }
+            document.getElementById('tabela-produtos-populares').style.display = 'table';
+            document.getElementById('produtos-populares-corpo').innerHTML = dados.produtos.map(p => `
+                <tr><td>${p.nome}</td><td>${p.total_vendido}</td><td>${formatarMoeda(p.valor_total)}</td></tr>
+            `).join('');
+        } catch (erro) {
+            document.getElementById('produtos-populares-loading').style.display = 'none';
+            console.error(erro);
+        }
+    }
+
+    async function carregarClientesVip() {
+        try {
+            const resposta = await apiFetch('/relatorios/clientes-vip?limite=8');
+            const dados = await resposta.json();
+            document.getElementById('clientes-vip-loading').style.display = 'none';
+
+            if (!dados.clientes || dados.clientes.length === 0) {
+                document.getElementById('clientes-vip-vazio').style.display = 'block';
+                return;
+            }
+            document.getElementById('tabela-clientes-vip').style.display = 'table';
+            document.getElementById('clientes-vip-corpo').innerHTML = dados.clientes.map(c => `
+                <tr><td>${c.nome}</td><td>${c.total_pedidos}</td><td>${formatarMoeda(c.valor_total)}</td></tr>
+            `).join('');
+        } catch (erro) {
+            document.getElementById('clientes-vip-loading').style.display = 'none';
+            console.error(erro);
+        }
+    }
+
+    async function carregarEstoque() {
+        try {
+            const resposta = await apiFetch('/relatorios/estoque');
+            const dados = await resposta.json();
+            document.getElementById('estoque-loading').style.display = 'none';
+            document.getElementById('estoque-resumo').style.display = 'block';
+
+            document.getElementById('estoque-total-produtos').textContent = dados.total_produtos;
+            document.getElementById('estoque-total-unidades').textContent = dados.estoque_total_unidades;
+            document.getElementById('estoque-baixo-count').textContent = dados.estoque_baixo.length;
+            document.getElementById('estoque-zerado-count').textContent = dados.sem_estoque.length;
+
+            const alertas = [...dados.sem_estoque.map(p => ({...p, tipo: 'sem estoque'})), ...dados.estoque_baixo.map(p => ({...p, tipo: 'estoque baixo'}))];
+            const container = document.getElementById('estoque-alertas');
+            if (alertas.length === 0) {
+                container.innerHTML = '<p class="empty-state">Nenhum alerta de estoque 🎉</p>';
+                return;
+            }
+            container.innerHTML = '<h4 style="margin-top:20px;">Alertas</h4>' + alertas.map(p => `
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--cor-borda);">
+                    <span>${p.nome}</span>
+                    <span class="status-badge ${p.tipo === 'sem estoque' ? 'status-inativo' : 'status-vip'}">${p.tipo} (${p.estoque_total})</span>
+                </div>
+            `).join('');
+        } catch (erro) {
+            document.getElementById('estoque-loading').style.display = 'none';
+            console.error(erro);
+        }
+    }
+
+    carregarResumoGeral();
+    carregarProdutosPopulares();
+    carregarClientesVip();
+    carregarEstoque();
+</script>
+{% endblock %}
