@@ -22,7 +22,7 @@ def create_app(config_name=None):
     app = Flask(__name__)
 
     # Carregar configuração
-    config_name = config_name or os.getenv('APP_ENV', 'development')
+    config_name = config_name or os.getenv('APP_ENV')
     config_cls = config_by_name.get(config_name, config_by_name['default'])
 
     if config_cls is ProductionConfig:
@@ -35,22 +35,41 @@ def create_app(config_name=None):
     jwt.init_app(app)
     # cors.init_app(app, origins=app.config['CORS_ORIGINS'])
     cors.init_app(
-    app,
-    origins=app.config['CORS_ORIGINS'],
-    supports_credentials=True
-)
+            app,
+            origins=app.config['CORS_ORIGINS'],
+            supports_credentials=True
+        )
 
     @jwt.unauthorized_loader
     def token_ausente(motivo):
+        print("=" * 80)
+        print("JWT NÃO AUTORIZADO")
+        print("Motivo:", motivo)
+        print("Cookies:", dict(request.cookies))
+        print("Authorization:", request.headers.get("Authorization"))
+        print("URL:", request.path)
+        print("=" * 80)
+
         if _requisicao_quer_html():
             return redirect(url_for('auth.login_page'))
-        return jsonify({'erro': 'Não autorizado', 'codigo': 401}), 401
+
+        return jsonify({
+            'erro': 'Não autorizado',
+            'motivo': motivo
+        }), 401
 
     @jwt.invalid_token_loader
     def token_invalido(motivo):
+        print("=" * 80)
+        print("TOKEN INVÁLIDO")
+        print("Motivo:", motivo)
+        print("Cookies:", dict(request.cookies))
+        print("=" * 80)
+
         if _requisicao_quer_html():
             return redirect(url_for('auth.login_page'))
-        return jsonify({'erro': 'Token inválido', 'codigo': 401}), 401
+
+        return jsonify({'erro': motivo}), 401
 
     @jwt.expired_token_loader
     def token_expirado(header, payload):

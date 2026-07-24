@@ -26,8 +26,8 @@ class Config:
     JWT_COOKIE_SECURE = os.getenv('JWT_COOKIE_SECURE', 'false').lower() == 'true'
     JWT_COOKIE_SAMESITE = 'Lax'
     JWT_ACCESS_COOKIE_NAME = 'access_token_cookie'
-    JWT_COOKIE_CSRF_PROTECT = False
-    JWT_SESSION_COOKIE = False
+    JWT_COOKIE_CSRF_PROTECT = True
+    JWT_SESSION_COOKIE = True
 
     # CORS
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:5000,http://localhost:3000').split(',')
@@ -74,7 +74,7 @@ class Config:
     # Cache
     CACHE_TYPE = os.getenv('CACHE_TYPE', 'simple')
     CACHE_DEFAULT_TIMEOUT = int(os.getenv('CACHE_DEFAULT_TIMEOUT', 300))
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+    SECRET_KEY = os.getenv('SECRET_KEY')
 
     @staticmethod
     def validar():

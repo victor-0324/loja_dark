@@ -46,7 +46,7 @@ def dashboard():
 
 # Clientes
 @paginas_bp.route('/clientes', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def clientes():
     """Página de clientes"""
     return render_template('clientes.html', active='clientes')
@@ -57,6 +57,7 @@ def clientes():
 @jwt_required()
 def detalhes_cliente(cliente_id):
     """Página de detalhes do cliente"""
+
     return render_template('cliente_detalhes.html', cliente_id=cliente_id, active='clientes')
 
 

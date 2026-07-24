@@ -53,7 +53,7 @@ def formatar_resposta_sucesso(dados=None, mensagem='Sucesso', codigo=200):
 def listar_clientes():
     """
     Lista clientes com filtros, paginação e pesquisa.
-    
+
     Query params:
     - pagina: número da página (padrão: 1)
     - por_pagina: itens por página (padrão: 20, máximo: 100)

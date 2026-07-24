@@ -7,7 +7,7 @@ from flask_jwt_extended import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-
+import traceback
 from src.blueprints.auth import auth_bp
 from src.database import DBConnectionHendler
 from src.models import Loja, Usuario
@@ -22,7 +22,7 @@ def login():
 
     try:
         dados = request.get_json() or {}
-
+        print(dados)
         if not dados.get('email') or not dados.get('senha'):
             return jsonify({'erro': 'Email e senha obrigatórios'}), 400
 
@@ -42,7 +42,7 @@ def login():
 
         # Criar token
         access_token = create_access_token(
-            identity=usuario.id,
+            identity=str(usuario.id),
             additional_claims={
                 'loja_id': usuario.loja_id,
                 'email': usuario.email,
@@ -60,8 +60,9 @@ def login():
         set_access_cookies(resposta, access_token)
         return resposta, 200
 
-    except Exception as e:
-        return jsonify({'erro': str(e)}), 500
+    except Exception:
+        traceback.print_exc()
+        raise
     finally:
         db_handler.remove_session()
 
