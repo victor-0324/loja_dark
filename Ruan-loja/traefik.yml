@@ -1,0 +1,42 @@
+services:
+
+  portainer:
+    image: portainer/portainer-ce:latest
+
+    command:
+      - "-H"
+      - "tcp://tasks.agent:9001"
+
+    volumes:
+      - portainer_data:/data
+
+    networks:
+      - traefik_public
+
+    deploy:
+      mode: replicated
+      replicas: 1
+
+      placement:
+        constraints:
+          - node.role == manager
+
+      labels:
+        - "traefik.enable=true"
+
+        # HTTPS
+        - "traefik.http.routers.portainer.rule=Host(`ruan-port.kryptacode.com`)"
+
+        - "traefik.http.routers.portainer.entrypoints=websecure"
+
+        - "traefik.http.routers.portainer.tls.certresolver=leresolver"
+
+        # Service
+        - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+
+volumes:
+  portainer_data:
+
+networks:
+  traefik_public:
+    external: true
