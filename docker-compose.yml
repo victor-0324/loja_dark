@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  app:
+    image: g-krypta/apploja:latest
+
+    command: >
+      gunicorn app:app
+        --bind 0.0.0.0:5000
+        --workers 1
+        --timeout 180
+    environment:
+      DATABASE_CONNECTION: "mysql+pymysql://g-krypta:3G[cewzH]Faf^^~OnhAe@147.79.106.72:3306/loja_dark"
+    labels:
+      - "traefik.enable=true"
+
+      # --- HTTPS somente ---
+      - "traefik.http.routers.apploja.rule=Host(`loja.g4conecta.com`)"
+      - "traefik.http.routers.apploja.entrypoints=websecure"
+      - "traefik.http.routers.apploja.tls.certresolver=leresolver"
+      - "traefik.http.services.apploja.loadbalancer.server.port=5000"
+
+    networks:
+      - traefik_public
+
+networks:
+  traefik_public:
+    external: true

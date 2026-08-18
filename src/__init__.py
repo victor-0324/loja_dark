@@ -42,14 +42,6 @@ def create_app(config_name=None):
 
     @jwt.unauthorized_loader
     def token_ausente(motivo):
-        print("=" * 80)
-        print("JWT NÃO AUTORIZADO")
-        print("Motivo:", motivo)
-        print("Cookies:", dict(request.cookies))
-        print("Authorization:", request.headers.get("Authorization"))
-        print("URL:", request.path)
-        print("=" * 80)
-
         if _requisicao_quer_html():
             return redirect(url_for('auth.login_page'))
 
@@ -60,12 +52,6 @@ def create_app(config_name=None):
 
     @jwt.invalid_token_loader
     def token_invalido(motivo):
-        print("=" * 80)
-        print("TOKEN INVÁLIDO")
-        print("Motivo:", motivo)
-        print("Cookies:", dict(request.cookies))
-        print("=" * 80)
-
         if _requisicao_quer_html():
             return redirect(url_for('auth.login_page'))
 

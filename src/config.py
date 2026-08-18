@@ -34,11 +34,11 @@ class Config:
 
     # Database
     DB_DRIVER = os.getenv('DB_DRIVER', 'mysql')
-    DB_USER = os.getenv('DB_USER', 'vitor')
-    DB_PASSWORD = os.getenv('DB_PASSWORD', '032427gpt')
-    DB_HOST = os.getenv('DB_HOST', 'localhost')
+    DB_USER = os.getenv('DB_USER', 'g-krypta')
+    DB_PASSWORD = os.getenv('DB_PASSWORD', '3G[cewzH]Faf^^~OnhAe')
+    DB_HOST = os.getenv('DB_HOST', '147.79.106.72')
     DB_PORT = os.getenv('DB_PORT', '3306')
-    DB_NAME = os.getenv('DB_NAME', 'saas_loja')
+    DB_NAME = os.getenv('DB_NAME', 'loja_dark')
 
     if DB_DRIVER == 'mysql':
         SQLALCHEMY_DATABASE_URI = f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
@@ -96,7 +96,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     """Configuração para testes"""
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
+    SQLALCHEMY_DATABASE_URI = 'mysql+pymysql://g-krypta:3G[cewzH]Faf^^~OnhAe@147.79.106.72:3306/loja_dark'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     WTF_CSRF_ENABLED = False
 
